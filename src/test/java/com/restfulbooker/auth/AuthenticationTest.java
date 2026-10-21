@@ -1,6 +1,7 @@
 package com.restfulbooker.auth;
 
 import com.restfulbooker.config.ApiConfig;
+import com.restfulbooker.config.RequestSpecs;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -14,11 +15,10 @@ public class AuthenticationTest {
     @Test
     public void validCredentialsReturnToken() {
         given()
-                .baseUri(ApiConfig.baseUrl())
-                .contentType("application/json")
+                .spec(RequestSpecs.baseSpec())
                 .body(Map.of(
-                        "username", ApiConfig.username(),
-                        "password", ApiConfig.password()))
+                        "username", ApiConfig.getProperty("api.username"),
+                        "password", ApiConfig.getProperty("api.password")))
         .when()
                 .post("/auth")
         .then()
@@ -29,10 +29,9 @@ public class AuthenticationTest {
     @Test
     public void invalidCredentialsNoToken() {
         given()
-                .baseUri(ApiConfig.baseUrl())
-                .contentType("application/json")
+                .spec(RequestSpecs.baseSpec())
                 .body(Map.of(
-                        "username", ApiConfig.username(),
+                        "username", ApiConfig.getProperty("api.username"),
                         "password", "BadPassword"))
                 .when()
                 .post("/auth")

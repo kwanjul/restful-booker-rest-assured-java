@@ -1,6 +1,6 @@
 package com.restfulbooker.health;
 
-import com.restfulbooker.config.ApiConfig;
+import com.restfulbooker.config.RequestSpecs;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
@@ -10,7 +10,7 @@ public class HealthCheckTest {
     @Test
     public void pingReturnsCreated() {
         given()
-                .baseUri(ApiConfig.baseUrl())
+                .spec(RequestSpecs.baseSpec())
         .when()
                 .get("/ping")
         .then()

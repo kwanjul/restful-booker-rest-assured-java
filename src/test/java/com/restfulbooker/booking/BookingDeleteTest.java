@@ -1,62 +1,51 @@
 package com.restfulbooker.booking;
 
-import com.restfulbooker.config.ApiConfig;
+import com.restfulbooker.auth.AuthClient;
+import com.restfulbooker.config.RequestSpecs;
+import com.restfulbooker.data.BookingData;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.emptyOrNullString;
 
 public class BookingDeleteTest {
+
+    private Integer bookingId = null;
+
+    @AfterMethod(alwaysRun = true)
+    public void cleanup() {
+        try {
+            if (bookingId != null) {
+                BookingClient.deleteBooking(bookingId);
+            }
+        } finally {
+            bookingId = null;
+        }
+    }
+
     @Test
     public void deleteBookingWithValidTokenMakesBookingUnavailable() {
-        int bookingId = given()
-                .baseUri(ApiConfig.baseUrl())
-                .contentType("application/json")
-                .body(Map.of(
-                        "firstname", "Jane",
-                        "lastname", "Doe",
-                        "totalprice", 150,
-                        "depositpaid", true,
-                        "bookingdates", Map.of(
-                                "checkin", "2026-10-20",
-                                "checkout", "2026-10-22"),
-                        "additionalneeds", "Breakfast"))
-        .when()
-                .post("/booking")
-        .then()
-                .statusCode(200)
-                .extract()
-                .path("bookingid");
-
-        String token = given()
-                .baseUri(ApiConfig.baseUrl())
-                .contentType("application/json")
-                .body(Map.of(
-                        "username", ApiConfig.username(),
-                        "password", ApiConfig.password()))
-        .when()
-                .post("/auth")
-        .then()
-                .statusCode(200)
-                .body("token", not(emptyOrNullString()))
-                .extract()
-                .path("token");
+        Map<String, Object> booking = BookingData.defaultBooking();
+        bookingId = BookingClient.createBooking(booking);
+        String token = AuthClient.getToken();
 
         given()
-                .baseUri(ApiConfig.baseUrl())
+                .spec(RequestSpecs.baseSpec())
                 .cookie("token", token)
         .when()
                 .delete("/booking/{id}", bookingId)
         .then()
                 .statusCode(201);
 
+        int deletedId = bookingId;
+        bookingId = null;
+
         given()
-                .baseUri(ApiConfig.baseUrl())
+                .spec(RequestSpecs.baseSpec())
         .when()
-                .get("/booking/{id}", bookingId)
+                .get("/booking/{id}", deletedId)
         .then()
                 .statusCode(404);
     }

@@ -1,36 +1,47 @@
 package com.restfulbooker.config;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
+import java.util.Properties;
+
 public final class ApiConfig {
-    private static final String DEFAULT_BASE_URL = "https://restful-booker.herokuapp.com";
-    private static final String DEFAULT_USERNAME = "admin";
-    private static final String DEFAULT_PASSWORD = "changeme";
+    private static final String CONFIG_FILE = "test.properties";
+    private static final Properties PROPERTIES = new Properties();
 
-    private ApiConfig() {
+    static {
+        try (InputStream input = ApiConfig.class.getClassLoader().getResourceAsStream(CONFIG_FILE)) {
+            if (input == null) {
+                throw new IllegalStateException("Configuration file not found: " + CONFIG_FILE);
+            }
+            PROPERTIES.load(input);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to load configuration file: " + CONFIG_FILE, exception);
+        }
     }
 
-    public static String baseUrl() {
-        return configuredValue("api.baseUrl", "API_BASE_URL", DEFAULT_BASE_URL);
-    }
+    private ApiConfig() { }
 
-    public static String username() {
-        return configuredValue("api.username", "API_USERNAME", DEFAULT_USERNAME);
-    }
+    public static String getProperty(String property) {
+        String value = System.getProperty(property);
 
-    public static String password() {
-        return configuredValue("api.password", "API_PASSWORD", DEFAULT_PASSWORD);
-    }
+        if (value == null || value.isBlank()) {
+            String environmentVariable = property
+                    .toUpperCase(Locale.ROOT)
+                    .replace('.', '_');
 
-    private static String configuredValue(String propertyName, String environmentName, String defaultValue) {
-        String systemProperty = System.getProperty(propertyName);
-        if (systemProperty != null && !systemProperty.isBlank()) {
-            return systemProperty;
+            value = System.getenv(environmentVariable);
         }
 
-        String environmentVariable = System.getenv(environmentName);
-        if (environmentVariable != null && !environmentVariable.isBlank()) {
-            return environmentVariable;
+        if (value == null || value.isBlank()) {
+            value = PROPERTIES.getProperty(property);
         }
 
-        return defaultValue;
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Configuration property is missing: " + property);
+        }
+
+        return value;
     }
 }

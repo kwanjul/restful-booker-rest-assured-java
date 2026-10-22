@@ -84,12 +84,11 @@ jobs:
             report_html = report_html.replace('1980-02-01', timestamp)
             # Link the project name to its real GitHub repository instead of a
             # relative site URL that GitHub Pages does not provide.
-            repo_url = 'https://github.com/' + os.environ['GITHUB_REPOSITORY']
             report_html = re.sub(
-              r'<a\b[^>]*>\s*restful-booker-rest-assured-java\s*</a>',
-              f'<a href="{html.escape(repo_url, quote=True)}">restful-booker-rest-assured-java</a>',
-              report_html,
-              flags=re.IGNORECASE,
+            r'<a\b[^>]*>\s*restful-booker-rest-assured-java\s*</a>',
+            '',
+            report_html,
+            flags=re.IGNORECASE,
             )
             report_file.write_text(report_html, encoding='utf-8')
           details = '<iframe title="Surefire HTML report" src="surefire.html"></iframe>' if report_exists else '<p>The HTML report could not be generated. Check the workflow logs and downloadable artifacts.</p>'

@@ -90,6 +90,12 @@ jobs:
             report_html,
             flags=re.IGNORECASE,
             )
+            # Hide the redundant project link in the Maven report.
+            report_html = report_html.replace(
+            '</head>',
+            '<style>a[href*="github.com/kwanjul/restful-booker-rest-assured-java"]'
+            '{display:none !important;}</style></head>'
+            )          
             report_file.write_text(report_html, encoding='utf-8')
           details = '<iframe title="Surefire HTML report" src="surefire.html"></iframe>' if report_exists else '<p>The HTML report could not be generated. Check the workflow logs and downloadable artifacts.</p>'
           Path('public/index.html').write_text(f'''<!doctype html>

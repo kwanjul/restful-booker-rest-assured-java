@@ -12,18 +12,18 @@ A Java API test automation project built with **REST Assured**, **TestNG**, and 
 
 ## Test coverage
 
-The current suite contains **9 tests** covering:
+The current suite contains **16 tests** covering:
 
 | Area | Scenarios |
 | --- | --- |
 | Health check | Verify the API health-check endpoint |
 | Authentication | Verify valid and invalid credentials |
-| Booking creation | Create a booking and validate the response |
-| Booking retrieval | Retrieve booking IDs and retrieve booking details by ID |
-| Booking updates | Update an entire booking (PUT) and selected fields (PATCH) |
+| Booking creation | Create and validate a booking; test missing `firstname` and invalid `totalprice` inputs |
+| Booking retrieval | Retrieve booking IDs and booking details; verify responses for nonexistent and malformed booking IDs; filter bookings by first and last name |
+| Booking updates | Update an entire booking (PUT) and selected fields (PATCH); verify unauthenticated PUT and PATCH requests are rejected |
 | Booking deletion | Delete a booking and verify it is no longer available |
 
-Tests validate relevant HTTP status codes, response content, and booking data. Booking tests use generated booking IDs rather than depending on a pre-existing record.
+Tests cover successful operations and error responses, validating relevant HTTP status codes, response content, and booking data. Booking tests use generated booking IDs rather than depending on a pre-existing record.
 
 ## Framework structure
 
@@ -95,5 +95,7 @@ mvn test -Dapi.username=your-username -Dapi.password=your-password
 ```
 
 ## Notes
+
+The public API exhibits some unexpected input-validation behavior: omitting `firstname` when creating a booking returns HTTP 500, while submitting a nonnumeric `totalprice` can return HTTP 200 with `totalprice` set to `null`. Tests document these observed responses rather than treating them as recommended API behavior.
 
 Restful Booker is a public demonstration API. Because it is a shared external service, test execution depends on its availability and behavior. The framework creates test bookings as needed and cleans them up where applicable to reduce dependencies between tests.

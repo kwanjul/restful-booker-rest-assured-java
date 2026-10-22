@@ -8,7 +8,6 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static com.restfulbooker.data.BookingData.booking;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -48,8 +47,7 @@ public class BookingUpdateTest {
                 .body("depositpaid", equalTo(false))
                 .body("bookingdates.checkin", equalTo("2026-11-20"))
                 .body("bookingdates.checkout", equalTo("2026-11-22"))
-                .body("additionalneeds", equalTo("Late checkout"))
-        ;
+                .body("additionalneeds", equalTo("Late checkout"));
     }
 
     @Test
@@ -74,5 +72,35 @@ public class BookingUpdateTest {
                 .body("bookingdates.checkin", equalTo("2026-11-20"))
                 .body("bookingdates.checkout", equalTo("2026-11-22"))
                 .body("additionalneeds", equalTo("Breakfast"));
+    }
+
+    @Test
+    public void updateBookingWithoutAuthentication() {
+        Map<String, Object> booking = BookingData.defaultBooking();
+        bookingId = BookingClient.createBooking(booking);
+
+        given()
+                .spec(RequestSpecs.baseSpec())
+                .body(BookingData.booking("Alex", "Smith", 275, false, "Late checkout"))
+        .when()
+                .put("/booking/{id}", bookingId)
+        .then()
+                .statusCode(403)
+                .body(equalTo("Forbidden"));
+    }
+
+    @Test
+    public void partiallyUpdateBookingWithoutAuthentication() {
+        Map<String, Object> booking = BookingData.defaultBooking();
+        bookingId = BookingClient.createBooking(booking);
+
+        given()
+                .spec(RequestSpecs.baseSpec())
+                .body(Map.of("firstname", "Alex", "lastname", "Smith"))
+        .when()
+                .patch("/booking/{id}", bookingId)
+        .then()
+                .statusCode(403)
+                .body(equalTo("Forbidden"));
     }
 }

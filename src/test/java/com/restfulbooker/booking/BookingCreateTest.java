@@ -5,11 +5,11 @@ import com.restfulbooker.data.BookingData;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.*;
 
 public class BookingCreateTest {
 
@@ -49,6 +49,39 @@ public class BookingCreateTest {
                 .body("booking.bookingdates.checkin", equalTo(bookingDates.get("checkin")))
                 .body("booking.bookingdates.checkout", equalTo(bookingDates.get("checkout")))
                 .body("booking.additionalneeds", equalTo(booking.get("additionalneeds")))
+                .extract()
+                .path("bookingid");
+    }
+
+    @Test
+    public void createBookingWithoutFirstNameReturns500() {
+        Map<String, Object> booking = new HashMap<>(BookingData.defaultBooking());
+        booking.remove("firstname");
+
+        given()
+            .spec(RequestSpecs.baseSpec())
+            .body(booking)
+        .when()
+            .post("/booking")
+        .then()
+            .statusCode(500)
+            .body(equalTo("Internal Server Error"));
+    }
+
+    @Test
+    public void createBookingWithInvalidTotalPriceReturnsNull() {
+        Map<String, Object> booking = new HashMap<>(BookingData.defaultBooking());
+        booking.put("totalprice", "invalid");
+
+        bookingId = given()
+                .spec(RequestSpecs.baseSpec())
+                .body(booking)
+        .when()
+                .post("/booking")
+        .then()
+                .statusCode(200)
+                .body("bookingid", notNullValue())
+                .body("booking.totalprice", nullValue())
                 .extract()
                 .path("bookingid");
     }

@@ -10,11 +10,20 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: restful-booker-pages
+  cancel-in-progress: false
 
 jobs:
   api-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Check out repository
@@ -28,13 +37,14 @@ jobs:
           cache: maven
 
       - name: Run REST Assured tests
+        id: tests
         run: mvn -B -ntp clean test
 
       - name: Generate HTML test report
         if: always()
         run: mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.6.0:report-only
 
-      - name: Upload test reports
+      - name: Upload downloadable test reports
         if: always()
         uses: actions/upload-artifact@v6
         with:
@@ -44,3 +54,63 @@ jobs:
             target/surefire-reports/
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Prepare GitHub Pages report
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          mkdir -p public
+          if [ -f target/reports/surefire.html ]; then
+            cp target/reports/surefire.html public/surefire.html
+          fi
+          python3 - <<'PY'
+          import datetime
+          import html
+          import os
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          timestamp = datetime.datetime.now(ZoneInfo('America/New_York')).strftime('%B %-d, %Y at %-I:%M:%S %p %Z')
+          outcome = os.environ.get('TEST_OUTCOME', 'unknown')
+          run_url = html.escape(os.environ['RUN_URL'], quote=True)
+          report_exists = Path('public/surefire.html').exists()
+          details = '<iframe title="Surefire HTML report" src="surefire.html"></iframe>' if report_exists else '<p>The HTML report could not be generated. Check the workflow logs and downloadable artifacts.</p>'
+          Path('public/index.html').write_text(f'''<!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>REST Assured API Test Results</title>
+            <style>
+              body {{ font-family: system-ui, sans-serif; margin: 0; color: #202124; background: #f6f8fa; }}
+              header {{ padding: 22px 28px; background: white; border-bottom: 1px solid #ddd; }}
+              h1 {{ margin: 0 0 10px; font-size: 1.5rem; }}
+              p {{ margin: 6px 0; }}
+              iframe {{ display: block; width: 100%; height: 80vh; border: 0; background: white; }}
+              a {{ color: #0969da; }}
+            </style>
+          </head>
+          <body>
+            <header>
+              <h1>REST Assured API Test Results</h1>
+              <p><strong>Report generated:</strong> {html.escape(timestamp)}</p>
+              <p><strong>Test execution:</strong> {html.escape(outcome)}</p>
+              <p><a href="{run_url}">View workflow run and download artifacts</a></p>
+            </header>
+            {details}
+          </body>
+          </html>''', encoding='utf-8')
+          PY
+
+      - name: Upload GitHub Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+      - name: Deploy latest report to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4

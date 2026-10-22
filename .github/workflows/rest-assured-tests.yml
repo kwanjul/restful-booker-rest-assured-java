@@ -62,20 +62,36 @@ jobs:
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           mkdir -p public
-          if [ -f target/reports/surefire.html ]; then
-            cp target/reports/surefire.html public/surefire.html
+          if [ -d target/reports ]; then
+            cp -R target/reports/. public/
           fi
           python3 - <<'PY'
           import datetime
           import html
           import os
+          import re
           from pathlib import Path
           from zoneinfo import ZoneInfo
 
           timestamp = datetime.datetime.now(ZoneInfo('America/New_York')).strftime('%B %-d, %Y at %-I:%M:%S %p %Z')
           outcome = os.environ.get('TEST_OUTCOME', 'unknown')
           run_url = html.escape(os.environ['RUN_URL'], quote=True)
-          report_exists = Path('public/surefire.html').exists()
+          report_file = Path('public/surefire.html')
+          report_exists = report_file.exists()
+          if report_exists:
+            report_html = report_file.read_text(encoding='utf-8')
+            # Maven's standalone report can contain a placeholder publication date.
+            report_html = report_html.replace('1980-02-01', timestamp)
+            # Link the project name to its real GitHub repository instead of a
+            # relative site URL that GitHub Pages does not provide.
+            repo_url = 'https://github.com/' + os.environ['GITHUB_REPOSITORY']
+            report_html = re.sub(
+              r'<a\b[^>]*>\s*restful-booker-rest-assured-java\s*</a>',
+              f'<a href="{html.escape(repo_url, quote=True)}">restful-booker-rest-assured-java</a>',
+              report_html,
+              flags=re.IGNORECASE,
+            )
+            report_file.write_text(report_html, encoding='utf-8')
           details = '<iframe title="Surefire HTML report" src="surefire.html"></iframe>' if report_exists else '<p>The HTML report could not be generated. Check the workflow logs and downloadable artifacts.</p>'
           Path('public/index.html').write_text(f'''<!doctype html>
           <html lang="en">
@@ -106,11 +122,11 @@ jobs:
 
       - name: Upload GitHub Pages artifact
         if: always()
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: public
 
       - name: Deploy latest report to GitHub Pages
         if: always()
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

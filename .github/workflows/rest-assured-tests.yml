@@ -42,7 +42,7 @@ jobs:
 
       - name: Generate HTML test report
         if: always()
-        run: mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.6.0:report-only
+        run: mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.6.0:report-only -Dproject.build.outputTimestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       - name: Upload downloadable test reports
         if: always()

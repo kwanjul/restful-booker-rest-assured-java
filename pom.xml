@@ -7,7 +7,9 @@
     <groupId>com.restfulbooker</groupId>
     <artifactId>restful-booker-rest-assured-java</artifactId>
     <version>1.0-SNAPSHOT</version>
-
+    <name>restful-booker-rest-assured-java</name>
+    <url>https://github.com/kwanjul/restful-booker-rest-assured-java</url>
+    <inceptionYear>2026</inceptionYear>
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

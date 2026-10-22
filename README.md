@@ -2,6 +2,12 @@
 
 A Java API test automation project built with **REST Assured**, **TestNG**, and **Maven** against the public [Restful Booker API](https://restful-booker.herokuapp.com). The project demonstrates API functional testing, reusable test utilities, configuration management, response validation, and test-data cleanup.
 
+## Test Reports
+
+View the latest automated REST Assured API test results:
+
+[View REST Assured Test Report](https://kwanjul.github.io/restful-booker-rest-assured-java/)
+
 ## Technology stack
 
 - Java 17
